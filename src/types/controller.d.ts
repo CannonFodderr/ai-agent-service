@@ -1,2 +1,8 @@
-type ControllerName = 'health' | 'general'
-type ControllersList = { name: ControllerName, init: Function }[]
+type ControllerName = 'health' | 'llm'
+type ControllersList = { name: ControllerName, init: Function, config: ControllerConfig }[]
+
+
+type ControllerConfig = {
+    baseApi: string,
+    
+}

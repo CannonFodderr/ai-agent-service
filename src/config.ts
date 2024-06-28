@@ -26,7 +26,7 @@ function parseKeyValues (index: number, originalKey: string) {
         return env[originalKey]
     }
 }
-export function getConfiguration (): Config | null {
+export function mountConfiguration (): Config | null {
     try {
         const allowedKeys = CONFIG_KEY_TYPES.map(k => k.key)
         const envKeys = Object.keys(env)
@@ -39,10 +39,29 @@ export function getConfiguration (): Config | null {
                 config[typedKey] = parseKeyValues(keyIndex, k)
             }
         })
-        logger.table(config)
+        // logger.table(config)
         return config
     } catch (error) {
         logger.error(`Error loading configuration: ${error}`)
         return null
     }
+}
+
+
+let config: Config | null
+export function initConfig (): Config | null {
+    try {
+        config = mountConfiguration()
+    } catch (error) {
+        logger.error(`Error initializing configuration: ${error}`)
+    }
+    return config
+}
+
+export default function getConfig() {
+    if(!config) {
+        config = initConfig()
+        logger.info('Configuration initialized')
+    }
+    return config
 }
