@@ -1,30 +1,37 @@
-import Axios from "axios"
+import Axios, { AxiosResponse } from "axios"
 import createLogger from "fodderlogger/dist"
 import getConfig from "../config"
+import generatePrompt, { PromptFactory } from "../server/factory/prompt.factory"
+import createPromptFactory from "../server/factory/prompt.factory"
+import { buffer } from "stream/consumers"
+import { Stream } from "stream"
 
 const logger = createLogger('llm-service')
 const config = getConfig()
 let service: LlmService | undefined
 
 export class LlmService { 
+    private promptFactory: PromptFactory
     constructor () {
-
+        this.promptFactory = createPromptFactory()
     }
-    async test () {
+    test (userData: UserPromptData) {
             try {
                 const baseURL = `${config?.OLLAMA_HOST}:${config?.OLLAMA_PORT}`
                 const axios = Axios.create({ baseURL })
                 
                 const payload = {
                     "model": "llama3",
-                    "prompt":"Why is the sky blue?"
+                    "prompt": this.promptFactory.generatePrompt({ userInput: userData.userInput, system: userData.system })
+
                 }
-                const { data } = await axios.post("/api/generate", payload, {
+                return axios.post("/api/generate", payload, {
                     headers: {
                         "Content-Type": "application/json"
-                    }
+                    },
+                    responseType: "stream"
                 })
-                console.log({ data })
+
             } catch (error) {
                 logger.error(`Error testing LLM service: ${error}`)
                 return null
