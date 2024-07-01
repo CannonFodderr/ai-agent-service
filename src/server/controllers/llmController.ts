@@ -2,7 +2,7 @@ import { Request, RequestHandler, Response, Router, json } from 'express'
 import createLogger from 'fodderlogger/dist'
 import cors from 'cors'
 import createLlmService, { LlmService } from '../../service/llm-service'
-import { bufferStreamHandler } from '../../utils/stream.utils'
+import { bufferStreamHandler, bufferStreamToString } from '../../utils/stream.utils'
 
 const logger = createLogger('llmController')
 
@@ -22,7 +22,7 @@ export class LlmController {
         }))
         llmRouter.use(json())
 
-        this.testLlm(llmRouter, `${config.baseApi}/llm/test`)
+        this.chatLlm(llmRouter, `${config.baseApi}/llm/chat`)
 
         this.routers.push(llmRouter)
         logger.info('LLM controller initialized')
@@ -31,7 +31,7 @@ export class LlmController {
         if(!req || !req.body) return false
         if(!req.body.input || typeof req.body.input !== "string" || req.body.input.length < 1) return false
         if(req.body.system && typeof req.body.system !== "string" && req.body.system.length < 1) return false
-        if(req.body.messages && !Array.isArray(req.body.message)) return false
+        if(req.body.messages && !Array.isArray(req.body.messages)) return false
         return true
     }
     /**
@@ -45,24 +45,30 @@ export class LlmController {
      * @param {string} path - The path at which to register the route.
      * @return {void}
      */
-    testLlm (router: Router, path: string) {
+    chatLlm (router: Router, path: string) {
         router.post(path, async (req: Request, res: Response) => {
             if(!this.isValidLlmRequest(req)) {
                 return res.sendStatus(400)
             }
-            const { input  = "", system, messages } = req.body as UserPromptData
-            
-            const response = await this.service.llmGenerate({ input, system, messages })
+            const userData = req.body as UserPromptData
+            const streaming = userData.config?.streaming === false ? false : true
+            const response = await this.service.llmGenerate(userData)
             if (response === null) {
                 logger.error('Error getting LLM stream')
                 return res.sendStatus(500)
             }
             
             const { data: stream } = response
-            const done = await bufferStreamHandler(stream, res)
-            if (!done) {
-                res.end()
+            if(streaming) {
+                const done = await bufferStreamHandler(stream, res)
+                if (!done) {
+                    res.end()
+                }
+            } else {
+                const response = await bufferStreamToString(stream)
+                res.json({ response })
             }
+            
         })
     }
     getRouters () {

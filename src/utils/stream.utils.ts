@@ -36,3 +36,29 @@ export async function bufferStreamHandler (stream: Stream, res: Response): Promi
         })
     })
 }
+export async function bufferStreamToString (stream: Stream): Promise<string | null> {
+    return new Promise((resolve, reject) => {
+        let answer = ""
+        stream.on('data', (buffer: Buffer) => {
+            try {
+                
+                const streamEvent = JSON.parse(buffer.toString().trim())
+                const status = streamEvent.done ? 200 : 207
+                if(streamEvent.response) {
+                    answer += streamEvent.response
+                }
+            } catch (error) {
+                logger.error(`Error parsing stream: ${error}`)
+                resolve(null)
+            }
+        })
+        stream.on("end", () => {
+            logger.debug('Stream ended')
+            resolve(answer)
+        })
+        stream.on("error", (err) => {
+            logger.error(`Error in stream: ${err}`)
+            reject("LLM stream error")
+        })
+    })
+}

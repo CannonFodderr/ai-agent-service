@@ -29,7 +29,7 @@ export class LlmService {
                     headers: {
                         "Content-Type": "application/json"
                     },
-                    responseType: "stream"
+                    responseType:  "stream"
                 })
 
             } catch (error) {

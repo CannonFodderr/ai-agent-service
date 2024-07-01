@@ -7,8 +7,12 @@ type PromptMessage = {
     role: PromptRoles,
     message: string
 }
+type LlmRequestConfig = {
+    streaming: boolean
+}
 type UserPromptData = {
     system?: string,
     input: string,
-    messages?: PromptMessage[]
+    messages?: PromptMessage[],
+    config?: LlmRequestConfig
 }
