@@ -42,7 +42,8 @@ class server {
         })
     }
     listen () {
-        this.app.listen(this.config.SERVER_HTTP_PORT, () => logger.success(`Server is listening on port ${this.config.SERVER_HTTP_PORT}`))
+        const port = this.config.SERVER_HTTP_PORT || 9000
+        this.app.listen(this.config.SERVER_HTTP_PORT, () => logger.success(`Server is listening on port ${port}`))
     }
 }
 
