@@ -2,7 +2,13 @@ type PromptConfig = {
     system: string,
 }
 
+type PromptRoles = "assistant" | "user"
+type PromptMessage = {
+    role: PromptRoles,
+    message: string
+}
 type UserPromptData = {
     system?: string,
-    userInput: string
+    input: string,
+    messages?: PromptMessage[]
 }

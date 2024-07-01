@@ -299,10 +299,10 @@ finalhandler@1.2.0:
     statuses "2.0.1"
     unpipe "~1.0.0"
 
-fodderlogger@^0.0.4:
-  version "0.0.4"
-  resolved "https://registry.yarnpkg.com/fodderlogger/-/fodderlogger-0.0.4.tgz#fd947011c885cc37ca04d2edfcc88b455197d316"
-  integrity sha512-mWInsRg/NdpQ9BbXtZLQXB6cAe9X3jcLGSPA0tNU0yNlEtEg6xT5WCXM/Q3q8mYJpPL4KLKqn+XmfbD9rG2YIw==
+fodderlogger@^0.0.11:
+  version "0.0.11"
+  resolved "https://registry.yarnpkg.com/fodderlogger/-/fodderlogger-0.0.11.tgz#9574081e4401d9ae0852e5a9772a5657edfc46a6"
+  integrity sha512-OEPlg27y0XSgB7IoX8m7X1+IYVW/915FsiC23y64OzikC8evUQx51nuPTOprwhRc5hNU77bIbNDG1V+2PVeCag==
 
 follow-redirects@^1.15.6:
   version "1.15.6"

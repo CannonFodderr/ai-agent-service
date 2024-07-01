@@ -15,14 +15,14 @@ export class LlmService {
     constructor () {
         this.promptFactory = createPromptFactory()
     }
-    test (userData: UserPromptData) {
+    llmGenerate (userData: UserPromptData) {
             try {
                 const baseURL = `${config?.OLLAMA_HOST}:${config?.OLLAMA_PORT}`
                 const axios = Axios.create({ baseURL })
                 
                 const payload = {
                     "model": "llama3",
-                    "prompt": this.promptFactory.generatePrompt({ userInput: userData.userInput, system: userData.system })
+                    "prompt": this.promptFactory.generatePrompt({ input: userData.input, system: userData.system, messages: userData.messages })
 
                 }
                 return axios.post("/api/generate", payload, {

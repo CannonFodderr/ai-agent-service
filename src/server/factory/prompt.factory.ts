@@ -1,3 +1,7 @@
+import createLogger from "fodderlogger"
+
+const logger = createLogger('prompt.factory')
+
 export class PromptFactory {
     private defaultConfig: PromptConfig
     constructor (config?: PromptConfig) {
@@ -8,29 +12,32 @@ export class PromptFactory {
             system: "You are a a helpful assistant",
         }
     }
+    private generateMessageHistoryFromUserData (messages: PromptMessage[]): string {
+        let historyString = ""
+        for (let i = 0; i < messages.length; i++) {
+            const mData = messages[i]
+            if(!["user", "assistant"].includes(mData.role)) continue
+            const newMessage = `<|start_header_id|>${mData.role.toLowerCase()}<|end_header_id|>
+            ${mData.message.trim()}<|eot_id|>`
+
+            historyString += newMessage
+        }
+        return historyString
+    }
+    private generateUserInputMessage (userInput: string) {
+        return `<|start_header_id|>user<|end_header_id|>${userInput}<|eot_id|>`
+    }
     generatePrompt (userConfig: UserPromptData): string {
         const system = userConfig.system || this.defaultConfig.system
-        const userInput = userConfig.userInput
+        const userInput = this.generateUserInputMessage(userConfig.input)
+        const messageHistory = userConfig.messages || []
+        const historyMessages = messageHistory.length ? this.generateMessageHistoryFromUserData(messageHistory): ""
         return `
             <|begin_of_text|>
             <|start_header_id|>system<|end_header_id|>
-    
                 ${system}<|eot_id|>
-    
-            <|start_header_id|>user<|end_header_id|>
-                What is France's capital?<|eot_id|>
-            
-            <|start_header_id|>assistant<|end_header_id|>
-                Bonjour! The capital of France is Paris!<|eot_id|>
-    
-            <|start_header_id|>user<|end_header_id|>
-                What can I do there?<|eot_id|>
-            
-            <|start_header_id|>assistant<|end_header_id|>
-                Paris, the City of Light, offers a romantic getaway with must-see attractions like the Eiffel Tower and Louvre Museum, romantic experiences like river cruises and charming neighborhoods, and delicious food and drink options, with helpful tips for making the most of your trip.<|eot_id|>
-                
-            <|start_header_id|>user<|end_header_id|>
-                ${userInput}<|eot_id|>
+            ${historyMessages}
+            ${userInput}
 
             <|start_header_id|>assistant<|end_header_id|>
         `

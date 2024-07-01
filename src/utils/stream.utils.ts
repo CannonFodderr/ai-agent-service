@@ -1,17 +1,21 @@
 import { Response } from "express";
 import createLogger from "fodderlogger/dist";
 import { Stream } from "stream";
-
-const logger = createLogger('stream.utils')
+const debugMode = true
+const logger = createLogger('stream.utils', { debug: debugMode })
 
 export async function bufferStreamHandler (stream: Stream, res: Response): Promise<boolean> {
     return new Promise((resolve, reject) => {
+        let debugAnswer = '\n'
         stream.on('data', (buffer: Buffer) => {
             try {
+                
                 const streamEvent = JSON.parse(buffer.toString().trim())
-                console.log({ streamEvent })
                 const status = streamEvent.done ? 200 : 207
                 if(streamEvent.response) {
+                    if(debugMode) {
+                        debugAnswer += streamEvent.response
+                    }    
                     res.status(status).write(streamEvent.response)
                 }
             } catch (error) {
@@ -21,6 +25,9 @@ export async function bufferStreamHandler (stream: Stream, res: Response): Promi
         })
         stream.on("end", () => {
             logger.info('Stream ended')
+            if(debugMode) {
+                logger.debug(debugAnswer)
+            }
             resolve(true)
         })
         stream.on("error", (err) => {
