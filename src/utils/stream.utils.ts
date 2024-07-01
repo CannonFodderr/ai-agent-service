@@ -62,3 +62,8 @@ export async function bufferStreamToString (stream: Stream): Promise<string | nu
         })
     })
 }
+
+
+export function isStream (val: any): boolean {
+    return val !== null && typeof val === 'object' && typeof val.pipe === 'function';
+}

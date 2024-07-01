@@ -1,8 +1,8 @@
 import Axios, { AxiosResponse } from "axios"
 import createLogger from "fodderlogger/dist"
 import getConfig from "../config"
-import generatePrompt, { PromptFactory } from "../server/factory/prompt.factory"
-import createPromptFactory from "../server/factory/prompt.factory"
+import generatePrompt, { PromptFactory } from "../server/factory/prompt/prompt.factory"
+import createPromptFactory from "../server/factory/prompt/prompt.factory"
 import { buffer } from "stream/consumers"
 import { Stream } from "stream"
 
@@ -19,11 +19,20 @@ export class LlmService {
             try {
                 const baseURL = `${config?.OLLAMA_HOST}:${config?.OLLAMA_PORT}`
                 const axios = Axios.create({ baseURL })
-                
-                const payload = {
-                    "model": "llama3",
-                    "prompt": this.promptFactory.generatePrompt({ input: userData.input, system: userData.system, messages: userData.messages })
-
+                const model: LlmModel = "llama3"
+                const streaming = userData.config?.streaming === false ? false : true // default to stream
+                const prompt = this.promptFactory.generatePrompt({ 
+                    input: userData.input,
+                    system: userData.system,
+                    messages: userData.messages 
+                }, 
+                {
+                    model 
+                })
+                const payload: OllamaGenerateRequestPayload = {
+                    model,
+                    prompt,
+                    stream: true
                 }
                 return axios.post("/api/generate", payload, {
                     headers: {

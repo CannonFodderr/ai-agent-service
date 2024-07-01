@@ -2,9 +2,9 @@ import { Request, RequestHandler, Response, Router, json } from 'express'
 import createLogger from 'fodderlogger/dist'
 import cors from 'cors'
 import createLlmService, { LlmService } from '../../service/llm-service'
-import { bufferStreamHandler, bufferStreamToString } from '../../utils/stream.utils'
+import { bufferStreamHandler, bufferStreamToString, isStream } from '../../utils/stream.utils'
 
-const logger = createLogger('llmController')
+const logger = createLogger('llmController', { debug: true })
 
 
 
@@ -58,15 +58,23 @@ export class LlmController {
                 return res.sendStatus(500)
             }
             
-            const { data: stream } = response
+            const { data } = response
             if(streaming) {
-                const done = await bufferStreamHandler(stream, res)
+                const done = await bufferStreamHandler(data, res)
                 if (!done) {
-                    res.end()
+                    logger.warn('LLm stream ended unexpectedly')
                 }
+                res.end()
             } else {
-                const response = await bufferStreamToString(stream)
-                res.json({ response })
+                if(isStream(data)) {
+                    const response = await bufferStreamToString(data)
+                    logger.debug(`Returning LLM STREAM to JSON response`)
+                    return res.json({ response })
+                }
+
+                logger.error(`Error getting LLM stream, isStream: ${isStream}`)
+                return res.sendStatus(500)
+                
             }
             
         })

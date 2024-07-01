@@ -1,12 +1,5 @@
-import createLogger from "fodderlogger"
-
-const logger = createLogger('prompt.factory')
-
-export class PromptFactory {
-    private defaultConfig: PromptConfig
-    constructor (config?: PromptConfig) {
-        this.defaultConfig = config || this.getDefaultConfig()
-    }
+let factory: undefined | Ollama3PromptFactory
+class Ollama3PromptFactory {
     getDefaultConfig (): PromptConfig {
         return {
             system: "You are a a helpful assistant",
@@ -27,8 +20,8 @@ export class PromptFactory {
     private generateUserInputMessage (userInput: string) {
         return `<|start_header_id|>user<|end_header_id|>${userInput}<|eot_id|>`
     }
-    generatePrompt (userConfig: UserPromptData): string {
-        const system = userConfig.system || this.defaultConfig.system
+    generatePrompt (userConfig: UserPromptData) {
+        const system = userConfig.system || this.getDefaultConfig().system
         const userInput = this.generateUserInputMessage(userConfig.input)
         const messageHistory = userConfig.messages || []
         const historyMessages = messageHistory.length ? this.generateMessageHistoryFromUserData(messageHistory): ""
@@ -44,6 +37,9 @@ export class PromptFactory {
     }
 }
 
-export default function createPromptFactory () {
-    return new PromptFactory()
+export default function createOllamaPromptFactory () {
+    if(!factory) {
+        factory = new Ollama3PromptFactory
+    }
+    return factory
 }
