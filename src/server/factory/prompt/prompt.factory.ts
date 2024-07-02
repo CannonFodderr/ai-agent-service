@@ -1,13 +1,13 @@
 import createLogger from "fodderlogger"
-import createOllamaPromptFactory from "./prompt.ollama3.factory"
+import createOllamaPromptFactory, { LLM_FUNCTION } from "./prompt.ollama3.factory"
 
 const logger = createLogger('prompt.factory')
 
 export class PromptFactory {
 
-    generatePrompt (userConfig: UserPromptData, modelConfig: ModelConfig): string {
+    generatePrompt (userConfig: UserPromptData, modelConfig: ModelConfig, llmFunction?: LLM_FUNCTION): string {
         switch(modelConfig.model) {
-            case "llama3": return createOllamaPromptFactory().generatePrompt(userConfig)       
+            case "llama3": return createOllamaPromptFactory().generatePrompt(userConfig, llmFunction)       
             default: return ""
         }
     }

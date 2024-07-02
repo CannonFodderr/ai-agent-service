@@ -1,5 +1,7 @@
-type PromptConfig = {
-    system: string,
+type PromptSystemConfig = {
+    general: string,
+    intent: string,
+    tools: string
 }
 
 type PromptRoles = "assistant" | "user"
