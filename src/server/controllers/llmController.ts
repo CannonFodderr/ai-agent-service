@@ -58,8 +58,9 @@ export class LlmController {
                 logger.error('Error getting LLM stream')
                 return res.sendStatus(500)
             }
-            
+            console.log({ response })
             const { data } = response
+            console.log({ data })
             if(streaming) {
                 const done = await bufferStreamHandler(data, res)
                 if (!done) {
@@ -68,12 +69,12 @@ export class LlmController {
                 res.end()
             } else {
                 if(isStream(data)) {
-                    const response = await bufferStreamToString(data)
+                    const str = await bufferStreamToString(data)
                     logger.debug(`Returning LLM STREAM to JSON response`)
-                    return res.json({ response })
+                    return res.json({ str })
                 } else {
                     logger.debug(`Returning LLM to JSON response`)
-                    return res.json({ response: response.replace(/\n/g,' ') })
+                    return res.json({ response: data.response.replace(/\n/g,' ') })
                 }
 
                 // logger.error(`Error getting LLM stream, isStream: ${isStream}`)

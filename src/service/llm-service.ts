@@ -4,7 +4,8 @@ import getConfig from "../config"
 import { PromptFactory } from "../server/factory/prompt/prompt.factory"
 import createPromptFactory from "../server/factory/prompt/prompt.factory"
 import { LLM_FUNCTION } from "../server/factory/prompt/prompt.ollama3.factory"
-import createToolsModule, { ToolsModule } from "../modules/tools.module"
+import createToolsModule, { ExecutorResponse, ToolsModule } from "../modules/tools.module"
+import { isValidJSON } from "../utils/json-parser.util"
 
 const logger = createLogger('llm-service')
 const config = getConfig()
@@ -77,11 +78,19 @@ export class LlmService {
     }
     async llmGenerate (userData: UserPromptData) {
             try {
-                let context
+                let context: undefined | ExecutorResponse
                 const { data } = await this.llmCheckTools(userData)
                 if(data && data.response && typeof data.response === "string") {
+                    let toParse = data.response
+                    const jsonValid = isValidJSON(data.response)
+                    if(!jsonValid) {
+                        // Retry if not valid JSON
+                        const secondaryToolsRequest = await this.llmCheckTools({ input: `This answer: ${data.response} is not a valid json format... refactor your answer to only return a valid JSON`})
+                        toParse = secondaryToolsRequest.data.respone
+                    }
                     try {
-                        const jsonRes = JSON.parse(data.response.trim())
+                        const jsonRes = JSON.parse(toParse.trim().replace(/\n/g,","))
+                        console.log({ jsonRes })
                         const { tool: toolName } = jsonRes
                         if(toolName && toolName.toLowerCase() !== 'none') {
                             const toolData = await this.toolsModule.executeTool(toolName)
@@ -93,7 +102,7 @@ export class LlmService {
                         if(error instanceof Error) {
                             logger.warn(error.name, error.message)
                             if (error.name === 'SyntaxError' && error.message.indexOf("not valid JSON")) {
-                                return data.response
+                                logger.error(`Error parsing LLM response: ${error.message}`)
                             }
                         }
                         logger.error("Error parsing LLM response")

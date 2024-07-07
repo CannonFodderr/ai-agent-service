@@ -1,4 +1,5 @@
-import os, { hostname, totalmem } from 'os'
+import os from 'os'
+
 export function getOsInfo () {
     return {
         memory: {

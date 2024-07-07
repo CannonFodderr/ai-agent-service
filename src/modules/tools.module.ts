@@ -7,7 +7,7 @@ let toolsmodule: undefined | ToolsModule
 type ToolsMap = { [key: string]: { executor:  (...args: any) => any, description?: string }}
 export type ToolList = { name: string, description?: string }[]
 const logger = createLogger('tools.module')
-type executorResponse = {
+export type ExecutorResponse = {
     toolUsed: string,
     data: any
 }
@@ -29,7 +29,7 @@ export class ToolsModule {
             }
          })
     }
-    async executeTool (toolName: string, ...args: any[]): Promise<executorResponse | null> {
+    async executeTool (toolName: string, ...args: any[]): Promise<ExecutorResponse | null> {
         const toolIndex = Object.keys(this.tools).indexOf(toolName)
         try {
             if(toolIndex === -1) {

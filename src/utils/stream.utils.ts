@@ -4,6 +4,13 @@ import { Stream } from "stream";
 const debugMode = true
 const logger = createLogger('stream.utils', { debug: debugMode })
 
+
+function createValidStreamEvent(eventName: string, data: any) {
+    const dataStr = typeof data === "string" ? data : JSON.stringify(data)
+    return `event: ${eventName}\n
+    data: ${dataStr}\n\n
+    `
+}
 export async function bufferStreamHandler (stream: Stream, res: Response): Promise<boolean> {
     return new Promise((resolve, reject) => {
         let debugAnswer = '\n'
@@ -11,12 +18,14 @@ export async function bufferStreamHandler (stream: Stream, res: Response): Promi
             try {
                 
                 const streamEvent = JSON.parse(buffer.toString().trim())
+                console.log({ streamEvent })
                 const status = streamEvent.done ? 200 : 207
                 if(streamEvent.response) {
+                    const event = createValidStreamEvent('llm-answer-chunk',streamEvent.response)
                     if(debugMode) {
                         debugAnswer += streamEvent.response
                     }    
-                    res.status(status).write(streamEvent.response)
+                    res.status(status).write(event)
                 }
             } catch (error) {
                 logger.error(`Error parsing stream: ${error}`)
