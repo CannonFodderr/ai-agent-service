@@ -16,5 +16,6 @@ type UserPromptData = {
     system?: string,
     input: string,
     messages?: PromptMessage[],
-    config?: LlmRequestConfig
+    config?: LlmRequestConfig,
+    context?: any
 }

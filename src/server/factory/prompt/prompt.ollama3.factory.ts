@@ -1,25 +1,31 @@
+import createToolsModule, { ToolList } from "../../../modules/tools.module"
+
+
 let factory: undefined | Ollama3PromptFactory
 export enum LLM_FUNCTION  {
     GENERAL = "general",
     INTENT_DETECTION = "intent",
     TOOLS_DETECTION = "tools"
 }
-const tools = ['chat_history', 'weather_api', 'stockmarket_api', 'calculator']
-const systemMessages = {
-    general: "You are a a helpful assistant, If you don't know the answer say you don't know",
-    intent: "Detect the topic of the user input and set how confident you are with the detection, answer ONLY with JSON object { 'intent': string, confidence: number }. if you are unable to detect set intent to none.",
-    tools: `using the chat history assess if you can answer the user input if you are not check if any of these tools: ${tools} might help. answer ONLY with JSON object { 'canAnswer': boolean, 'tool': string } if a tool is required set its name to the JSON tool property and canAnswer should be false. if you unable to answer but if you are unable to answer set canAnswer to false and tool to empty string to none."`
-}
 
 class Ollama3PromptFactory {
-    private getDefaultSystemConfig (llmFunction?: LLM_FUNCTION): string {
+    private toolsList: ToolList
+    constructor () {
+        const toolsModule = createToolsModule()
+        this.toolsList = toolsModule.getToolsList()
+    }
+    private getDefaultSystemConfig (llmFunction?: LLM_FUNCTION, context?: any): string {
+        let systemPrompt = "You are a a helpful assistant, If you don't know the answer say you don't know."
         if(llmFunction === LLM_FUNCTION.INTENT_DETECTION) {
-            return systemMessages.intent
+            return "Detect the topic of the user input and set how confident you are with the detection, answer ONLY with JSON object { 'intent': string, confidence: number }. if you are unable to detect set intent to none."
         } else if (llmFunction === LLM_FUNCTION.TOOLS_DETECTION) {
-            return systemMessages.tools
+            systemPrompt = `Check if any of these tools: [${JSON.stringify(this.toolsList)}] might help. if a tool is required set its name to the JSON tool property and canAnswer should be false. if you unable to answer but if you are unable to answer set canAnswer to false and tool to empty string to none. answer ONLY with JSON object { 'canAnswer': boolean, 'tool': string }"`
         }
-
-        return systemMessages.general
+        if(context) {
+            const contextStr = typeof context !== "string" ? JSON.stringify(context).trim() : context
+            systemPrompt = `If needed, use this context: ${contextStr} to try and answer. ${systemPrompt}`
+        }
+        return systemPrompt
         
     }
     private generateMessageHistoryFromUserData (messages: PromptMessage[]): string {
@@ -38,10 +44,11 @@ class Ollama3PromptFactory {
         return `<|start_header_id|>user<|end_header_id|>${userInput}<|eot_id|>`
     }
     
-    generatePrompt (userConfig: UserPromptData, llmFunction?: LLM_FUNCTION) {
-        const system = llmFunction || !userConfig.system ? this.getDefaultSystemConfig(llmFunction) : userConfig.system
-        const userInput = this.generateUserInputMessage(userConfig.input)
-        const messageHistory = userConfig.messages || []
+    generatePrompt (promptConfig: UserPromptData, llmFunction?: LLM_FUNCTION) {
+        const context = promptConfig.context || ""
+        const system = llmFunction || !promptConfig.system ? this.getDefaultSystemConfig(llmFunction, context) : promptConfig.system
+        const userInput = this.generateUserInputMessage(promptConfig.input)
+        const messageHistory = promptConfig.messages || []
         const historyMessages = messageHistory.length ? this.generateMessageHistoryFromUserData(messageHistory): ""
         return `
             <|begin_of_text|>

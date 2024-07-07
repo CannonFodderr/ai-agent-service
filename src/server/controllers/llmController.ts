@@ -53,6 +53,7 @@ export class LlmController {
             const userData = req.body as UserPromptData
             const streaming = userData.config?.streaming === false ? false : true
             const response = await this.service.llmGenerate(userData)
+            
             if (response === null) {
                 logger.error('Error getting LLM stream')
                 return res.sendStatus(500)
@@ -70,10 +71,13 @@ export class LlmController {
                     const response = await bufferStreamToString(data)
                     logger.debug(`Returning LLM STREAM to JSON response`)
                     return res.json({ response })
+                } else {
+                    logger.debug(`Returning LLM to JSON response`)
+                    return res.json({ response: response.replace(/\n/g,' ') })
                 }
 
-                logger.error(`Error getting LLM stream, isStream: ${isStream}`)
-                return res.sendStatus(500)
+                // logger.error(`Error getting LLM stream, isStream: ${isStream}`)
+                // return res.sendStatus(500)
                 
             }
             
