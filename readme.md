@@ -27,21 +27,25 @@ To get started with the AI agent, follow these steps:
 - npm (version 6.14.15 or higher)
 
 ### Installation
-
+#### Docker
+```
+docker build -t ai-server .
+```
+```
+docker run --name ai-server --env OLLAMA_HOST=http://host.docker.internal --env OLLAMA_PORT=11434 --env SERVER_HTTP_PORT=9000 -p9000:9000 ai-server
+```
+#### Manual
 1. Clone the repository:
 
    ```shell
    git clone https://github.com/CannonFodderr/ai-agent.git
-
 2. Install the required dependencies:
     ```shell
     cd ai-agent
     npm install // (or yarn)
-
 3. Configure the environment variables:
     Create a .env file in the root directory of the project.
     Set the required environment variables according to your configuration.
-4. 
 
 ### Configuration
 create a .env file containing these keys
