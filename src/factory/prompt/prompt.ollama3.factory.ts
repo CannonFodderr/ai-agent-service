@@ -1,4 +1,4 @@
-import createToolsModule, { ToolList } from "../../../modules/tools.module"
+import createToolsModule, { ToolList } from "../../modules/tools.module"
 
 
 let factory: undefined | Ollama3PromptFactory

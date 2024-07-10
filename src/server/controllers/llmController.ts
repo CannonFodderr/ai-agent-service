@@ -1,7 +1,7 @@
 import { Request, RequestHandler, Response, Router, json } from 'express'
 import createLogger from 'fodderlogger/dist'
 import cors from 'cors'
-import createLlmService, { LlmService } from '../../service/llm-service'
+import createLlmService, { OllamaService } from '../../service/ollama-service'
 import { bufferStreamHandler, bufferStreamToString, isStream } from '../../utils/stream.utils'
 
 const logger = createLogger('llmController', { debug: true })
@@ -11,7 +11,7 @@ const logger = createLogger('llmController', { debug: true })
 
 export class LlmController {
     private routers: Router[]
-    private service: LlmService
+    private service: OllamaService
     constructor (config: ControllerConfig) {
         this.routers = []
         this.service = createLlmService()

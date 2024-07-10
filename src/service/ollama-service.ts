@@ -1,31 +1,42 @@
-import Axios, { AxiosResponse } from "axios"
+import Axios from "axios"
 import createLogger from "fodderlogger/dist"
 import getConfig from "../config"
-import { PromptFactory } from "../server/factory/prompt/prompt.factory"
-import createPromptFactory from "../server/factory/prompt/prompt.factory"
-import { LLM_FUNCTION } from "../server/factory/prompt/prompt.ollama3.factory"
+import { PromptFactory } from "../factory/prompt/prompt.factory"
+import createPromptFactory from "../factory/prompt/prompt.factory"
+import { LLM_FUNCTION } from "../factory/prompt/prompt.ollama3.factory"
 import createToolsModule, { ExecutorResponse, ToolsModule } from "../modules/tools.module"
 import { isValidJSON } from "../utils/json-parser.util"
-
+import { OllamaGenerateRequestPayload, OllamaModel } from '../types/ollama-types'
 const logger = createLogger('llm-service')
 const config = getConfig()
 
 
-let service: LlmService | undefined
+let service: OllamaService | undefined
 
-export class LlmService { 
+export class OllamaService { 
     private promptFactory: PromptFactory
     private toolsModule: ToolsModule
+    private availableModels: OllamaModel[]
     constructor () {
         this.promptFactory = createPromptFactory()
         this.toolsModule = createToolsModule()
+        this.availableModels = []
         this.llmListModels()
     }
     private async llmListModels () {
         const baseURL = `${config?.OLLAMA_HOST}:${config?.OLLAMA_PORT}`
         const axios = Axios.create({ baseURL })
         const { data } = await axios.get("/api/tags")
-        logger.info({ data: JSON.stringify(data) })
+        this.availableModels.push(...data.models)
+
+        logger.success("Ollama models list: ")
+        logger.table(data.models.map((m: OllamaModel) => {
+            return {
+                name: m.name,
+                family: m.details.family
+            }
+        }))
+        // data.models.forEach((m: OllamaModel, i: number) => logger.info(`${i + 1}.Model: ${m.name} - ${m.details.family}`))
     }
     private triggerLLM (payload: OllamaGenerateRequestPayload) {
         const baseURL = `${config?.OLLAMA_HOST}:${config?.OLLAMA_PORT}`
@@ -40,7 +51,9 @@ export class LlmService {
 
     }
     async llmIntentDetection (userData: UserPromptData) {
-        const model: LlmModel = "llama3"
+        if(!this.availableModels.length) return logger.error("Ollama models not available")
+        
+        const model: string = this.availableModels[0].name
         const { input, system, messages } = userData
         const prompt = this.promptFactory.generatePrompt({ 
             input,
@@ -58,7 +71,12 @@ export class LlmService {
         return await this.triggerLLM(payload)
     }
     async llmCheckTools (userData: UserPromptData) {
-        const model: LlmModel = "llama3"
+        if(!this.availableModels.length) {
+            logger.error("Ollama models not available")
+            return null
+        }
+
+        const model: string = this.availableModels[0].name
         const { input, messages } = userData
         const prompt = this.promptFactory.generatePrompt({ 
             input,
@@ -79,18 +97,24 @@ export class LlmService {
     async llmGenerate (userData: UserPromptData) {
             try {
                 let context: undefined | ExecutorResponse
-                const { data } = await this.llmCheckTools(userData)
-                if(data && data.response && typeof data.response === "string") {
-                    let toParse = data.response
-                    const jsonValid = isValidJSON(data.response)
+                const res = await this.llmCheckTools(userData)
+                if(!res || !res.data) {
+                    logger.error("Failed to get tools response")
+                    return null
+                }
+                const { response } = res.data
+                if(response && typeof response === "string") {
+                    let toParse = response
+                    const jsonValid = isValidJSON(response)
                     if(!jsonValid) {
                         // Retry if not valid JSON
-                        const secondaryToolsRequest = await this.llmCheckTools({ input: `This answer: ${data.response} is not a valid json format... refactor your answer to only return a valid JSON`})
-                        toParse = secondaryToolsRequest.data.respone
+                        const secondaryToolsRequest = await this.llmCheckTools({ input: `This answer: ${response} is not a valid json format... refactor your answer to only return a valid JSON`})
+                        if(secondaryToolsRequest) {
+                            toParse = secondaryToolsRequest.data.respone
+                        }
                     }
                     try {
                         const jsonRes = JSON.parse(toParse.trim().replace(/\n/g,","))
-                        console.log({ jsonRes })
                         const { tool: toolName } = jsonRes
                         if(toolName && toolName.toLowerCase() !== 'none') {
                             const toolData = await this.toolsModule.executeTool(toolName)
@@ -109,7 +133,7 @@ export class LlmService {
                         return null
                     }
                 }
-                const model: LlmModel = "llama3"
+                const model: string = this.availableModels[0].name
                 const { input, system, messages } = userData
                 // const streaming = userData.config?.streaming === false ? false : true // default to stream
                 const prompt = this.promptFactory.generatePrompt({ 
@@ -138,7 +162,7 @@ export class LlmService {
 
 export default function createLlmService () {
     if(!service) {
-        service = new LlmService()
+        service = new OllamaService()
         logger.info('LLM service initialized')
     }
     return service
