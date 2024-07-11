@@ -1,4 +1,5 @@
 import createToolsModule, { ToolList } from "../../modules/tools.module"
+import { PromptMessage, UserPromptData } from "../../types/prompt"
 
 
 let factory: undefined | Ollama3PromptFactory

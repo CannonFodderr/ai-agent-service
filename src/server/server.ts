@@ -2,6 +2,7 @@ import express, { Express, Router } from 'express'
 import createLogger from 'fodderlogger/dist'
 import createHealthController from './controllers/healthController'
 import createLlmController from './controllers/llmController'
+import { Config } from '../types/config'
 
 const API_VERSION = 'v1'
 const controllersList: ControllersList = [

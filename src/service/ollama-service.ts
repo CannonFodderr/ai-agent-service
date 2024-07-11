@@ -1,4 +1,4 @@
-import Axios from "axios"
+
 import createLogger from "fodderlogger/dist"
 import getConfig from "../config"
 import { PromptFactory } from "../factory/prompt/prompt.factory"
@@ -7,6 +7,8 @@ import { LLM_FUNCTION } from "../factory/prompt/prompt.ollama3.factory"
 import createToolsModule, { ExecutorResponse, ToolsModule } from "../modules/tools.module"
 import { isValidJSON } from "../utils/json-parser.util"
 import { OllamaGenerateRequestPayload, OllamaModel } from '../types/ollama-types'
+import createApiService, { ApiService } from "./api-service"
+import { UserPromptData } from "../types/prompt"
 const logger = createLogger('llm-service')
 const config = getConfig()
 
@@ -17,16 +19,16 @@ export class OllamaService {
     private promptFactory: PromptFactory
     private toolsModule: ToolsModule
     private availableModels: OllamaModel[]
+    private ollamaCLient: ApiService
     constructor () {
         this.promptFactory = createPromptFactory()
         this.toolsModule = createToolsModule()
         this.availableModels = []
+        this.ollamaCLient = createApiService(`${config?.OLLAMA_HOST}:${config?.OLLAMA_PORT}`)
         this.llmListModels()
     }
-    private async llmListModels () {
-        const baseURL = `${config?.OLLAMA_HOST}:${config?.OLLAMA_PORT}`
-        const axios = Axios.create({ baseURL })
-        const { data } = await axios.get("/api/tags")
+    private async llmListModels () {        
+        const { data } = await this.ollamaCLient.get("/api/tags")
         this.availableModels.push(...data.models)
 
         logger.success("Ollama models list: ")
@@ -36,13 +38,9 @@ export class OllamaService {
                 family: m.details.family
             }
         }))
-        // data.models.forEach((m: OllamaModel, i: number) => logger.info(`${i + 1}.Model: ${m.name} - ${m.details.family}`))
     }
     private triggerLLM (payload: OllamaGenerateRequestPayload) {
-        const baseURL = `${config?.OLLAMA_HOST}:${config?.OLLAMA_PORT}`
-                const axios = Axios.create({ baseURL })
-
-        return axios.post("/api/generate", payload, {
+        return this.ollamaCLient.post("/api/generate", payload, {
             headers: {
                 "Content-Type": "application/json"
             },

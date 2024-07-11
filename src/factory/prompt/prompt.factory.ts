@@ -1,6 +1,7 @@
 import createLogger from "fodderlogger"
 import createOllamaPromptFactory, { LLM_FUNCTION } from "./prompt.ollama3.factory"
 import { OllamaModelConfig } from "../../types/ollama-types"
+import { UserPromptData } from "../../types/prompt"
 
 const logger = createLogger('prompt.factory')
 

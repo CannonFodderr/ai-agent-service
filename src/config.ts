@@ -1,6 +1,7 @@
 
 import { env } from 'node:process'
 import createLogger from 'fodderlogger'
+import { Config, CONFIG_KEY, CONFIG_KEY_TYPE } from './types/config'
 
 const logger = createLogger('config-loader')
 
