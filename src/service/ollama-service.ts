@@ -6,9 +6,9 @@ import createPromptFactory from "../factory/prompt/prompt.factory"
 import { LLM_FUNCTION } from "../factory/prompt/prompt.ollama3.factory"
 import createToolsModule, { ExecutorResponse, ToolsModule } from "../modules/tools.module"
 import { isValidJSON } from "../utils/json-parser.util"
-import { OllamaGenerateRequestPayload, OllamaModel } from '../types/ollama-types'
+import { OllamaGenerateRequestPayload, OllamaModel } from '../types/ollama.types'
 import createApiService, { ApiService } from "./api-service"
-import { UserPromptData } from "../types/prompt"
+import { UserPromptData } from "../types/prompt.types"
 const logger = createLogger('llm-service')
 const config = getConfig()
 

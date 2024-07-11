@@ -3,7 +3,7 @@ import createLogger from 'fodderlogger/dist'
 import cors from 'cors'
 import createLlmService, { OllamaService } from '../../service/ollama-service'
 import { bufferStreamHandler, bufferStreamToString, isStream } from '../../utils/stream.utils'
-import { UserPromptData } from '../../types/prompt'
+import { UserPromptData } from '../../types/prompt.types'
 
 const logger = createLogger('llmController', { debug: true })
 

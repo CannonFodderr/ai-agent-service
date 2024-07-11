@@ -1,0 +1,24 @@
+export type Config = {
+    "ENV": any,
+    "SERVER_HTTP_PORT": any,
+    "OLLAMA_HOST": any,
+    "OLLAMA_PORT": any,
+    "POSTGRES_HOST": any,
+    "POSTGRES_PORT": any,
+    "POSTGRES_DB_NAME": any
+    "POSTGRES_SERVICE_USER": any
+    "POSTGRES_SERVICE_PASSWORD": any
+}
+
+// LIST OF ENV KEYS
+export type CONFIG_KEY = "ENV" 
+| "SERVER_HTTP_PORT"
+| "OLLAMA_HOST"
+| "OLLAMA_PORT"
+| "POSTGRES_HOST"
+| "POSTGRES_PORT"
+| "POSTGRES_DB_NAME"
+| "POSTGRES_SERVICE_PASSWORD"
+| "POSTGRES_SERVICE_USER"
+
+export type CONFIG_KEY_TYPE = { key: CONFIG_KEY, type: any }

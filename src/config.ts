@@ -1,7 +1,7 @@
 
 import { env } from 'node:process'
 import createLogger from 'fodderlogger'
-import { Config, CONFIG_KEY, CONFIG_KEY_TYPE } from './types/config'
+import { Config, CONFIG_KEY, CONFIG_KEY_TYPE } from './types/config.types'
 
 const logger = createLogger('config-loader')
 
@@ -9,14 +9,24 @@ const CONFIG_KEY_TYPES: CONFIG_KEY_TYPE[] = [
     { key: 'ENV', type: 'string' },
     { key: 'SERVER_HTTP_PORT', type: 'number' },
     { key: 'OLLAMA_HOST', type: 'string' },
-    { key: 'OLLAMA_PORT', type: 'number' }
+    { key: 'OLLAMA_PORT', type: 'number' },
+    { key: 'POSTGRES_HOST', type: 'string' },
+    { key: 'POSTGRES_PORT', type: 'number' },
+    { key: 'POSTGRES_DB_NAME', type: 'string' },
+    { key: 'POSTGRES_SERVICE_USER', type: 'string' },
+    { key: 'POSTGRES_SERVICE_PASSWORD', type: 'string' }
 ]
 function getEmptyConfig (): Config {
     return {
         ENV: '',
         SERVER_HTTP_PORT: '',
         OLLAMA_HOST: '',
-        OLLAMA_PORT: ''
+        OLLAMA_PORT: '',
+        POSTGRES_HOST:'',
+        POSTGRES_PORT:'',
+        POSTGRES_DB_NAME: '',
+        POSTGRES_SERVICE_PASSWORD: '',
+        POSTGRES_SERVICE_USER: ''
     }
 }
 function parseKeyValues (index: number, originalKey: string) {

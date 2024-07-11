@@ -2,8 +2,8 @@ import express, { Express, Router } from 'express'
 import createLogger from 'fodderlogger/dist'
 import createHealthController from './controllers/healthController'
 import createLlmController from './controllers/llmController'
-import { Config } from '../types/config'
-
+import { Config } from '../types/config.types'
+import createPostgresService, { PostgresService } from '../service/postgres-service'
 const API_VERSION = 'v1'
 const controllersList: ControllersList = [
     { 
@@ -25,11 +25,22 @@ const logger = createLogger('server')
 class server {
     private app: Express
     private config: Config
+    private pgService: PostgresService
     constructor (config: Config) {
         this.app = express()
         this.config = config
 
         this.mountControllers()
+
+        this.pgService = createPostgresService({ 
+            host: this.config.POSTGRES_HOST,
+            port: this.config.POSTGRES_PORT,
+            user: this.config.POSTGRES_SERVICE_USER,
+            password: this.config.POSTGRES_SERVICE_PASSWORD,
+            database: this.config.POSTGRES_DB_NAME,
+            keepAlive: true,
+        })
+        this.pgService.initService()
         logger.success('Server initialized')
     }
     private async mountControllers (includeControllers: ControllerName[] = []) {

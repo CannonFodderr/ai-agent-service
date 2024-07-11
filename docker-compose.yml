@@ -9,20 +9,21 @@ services:
       - .env
     environment:
       - OLLAMA_HOST=http://host.docker.internal
+      - POSTGRES_HOST=db_postgres
     ports:
       - "9000:9000"
     depends_on:
-      db:
+      db_postgres:
         condition: service_healthy
     command: ["node","./index.js"]
  
-  db:
+  db_postgres:
     container_name: 'postgres'
     image: postgres
     restart: always
     volumes:
       - ./volumes/pgdata:/var/lib/postgresql/data:z
-    ports: ["5432:5432"]
+    ports: ["${POSTGRES_PORT}:${POSTGRES_PORT}"]
     environment:
       PGUSER: ${POSTGRES_USER}
       POSTGRES_USER: ${POSTGRES_USER}
