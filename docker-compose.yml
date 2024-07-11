@@ -1,0 +1,42 @@
+services:
+  web:
+    container_name: 'ai-service'
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    image: ai-service
+    env_file:
+      - .env
+    environment:
+      - OLLAMA_HOST=http://host.docker.internal
+    ports:
+      - "9000:9000"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["node","./index.js"]
+ 
+  db:
+    container_name: 'postgres'
+    image: postgres
+    restart: always
+    volumes:
+      - ./volumes/pgdata:/var/lib/postgresql/data:z
+    ports: ["5432:5432"]
+    environment:
+      PGUSER: ${POSTGRES_USER}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 1s
+      timeout: 5s
+      retries: 10
+ 
+  adminer:
+    container_name: 'postgres-adminer'
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
