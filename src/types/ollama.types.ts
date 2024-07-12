@@ -17,6 +17,12 @@ export type OllamaGenerateRequestPayload = {
     system?: string,
     format?: OllamaFormats
 }
+export type OllamaEmbeddingRequestPayload = {
+    model: ModelName,
+    prompt: string,
+    options?: { [key: string]: any },
+    keepAlive?: number
+}
 export type OllamaModelDetails = {
     parent_model: string,
     format: string,

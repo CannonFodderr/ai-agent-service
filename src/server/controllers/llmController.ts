@@ -27,6 +27,7 @@ export class LlmController {
 
         this.routers.push(llmRouter)
         logger.info('LLM controller initialized')
+        
     }
     private isValidLlmRequest (req: Request) {
         if(!req || !req.body) return false

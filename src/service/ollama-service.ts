@@ -6,10 +6,10 @@ import createPromptFactory from "../factory/prompt/prompt.factory"
 import { LLM_FUNCTION } from "../factory/prompt/prompt.ollama3.factory"
 import createToolsModule, { ExecutorResponse, ToolsModule } from "../modules/tools.module"
 import { isValidJSON } from "../utils/json-parser.util"
-import { OllamaGenerateRequestPayload, OllamaModel } from '../types/ollama.types'
+import { OllamaEmbeddingRequestPayload, OllamaGenerateRequestPayload, OllamaModel } from '../types/ollama.types'
 import createApiService, { ApiService } from "./api-service"
 import { UserPromptData } from "../types/prompt.types"
-const logger = createLogger('llm-service')
+const logger = createLogger('llm-service', { debug: true })
 const config = getConfig()
 
 
@@ -26,11 +26,12 @@ export class OllamaService {
         this.availableModels = []
         this.ollamaCLient = createApiService(`${config?.OLLAMA_HOST}:${config?.OLLAMA_PORT}`)
         this.llmListModels()
+        
     }
     private async llmListModels () {        
         const { data } = await this.ollamaCLient.get("/api/tags")
         this.availableModels.push(...data.models)
-
+        
         logger.success("Ollama models list: ")
         logger.table(data.models.map((m: OllamaModel) => {
             return {
@@ -38,6 +39,7 @@ export class OllamaService {
                 family: m.details.family
             }
         }))
+        // await this.generateEmbeddings({model: this.availableModels[0].name, prompt: "This is a test"})
     }
     private triggerLLM (payload: OllamaGenerateRequestPayload) {
         return this.ollamaCLient.post("/api/generate", payload, {
@@ -47,6 +49,19 @@ export class OllamaService {
             responseType:  payload.stream ? "stream" : "json"
         })
 
+    }
+    async generateEmbeddings (payload: OllamaEmbeddingRequestPayload) {
+        if(!payload.model) {
+            payload.model = this.availableModels[0].name
+        }
+        const embdRes = await this.ollamaCLient.post("/api/embeddings", payload)
+        if(!embdRes || !embdRes.data) {
+            logger.error(`Failed to generate embeddings: ${JSON.stringify(embdRes)}`)
+            return null
+        }
+        console.debug(embdRes.data.embedding)
+        console.debug(`Embed res status: ${embdRes.status}`)
+        return embdRes.data.embedding
     }
     async llmIntentDetection (userData: UserPromptData) {
         if(!this.availableModels.length) return logger.error("Ollama models not available")
@@ -158,7 +173,7 @@ export class OllamaService {
 
 
 
-export default function createLlmService () {
+export default function createOllamaService () {
     if(!service) {
         service = new OllamaService()
         logger.info('LLM service initialized')
