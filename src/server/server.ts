@@ -39,8 +39,10 @@ class server {
             password: this.config.POSTGRES_SERVICE_PASSWORD,
             database: this.config.POSTGRES_DB_NAME,
         })
+        // TEST VECTOR TABLE
         // QUERY ALL RECORDS IN test TABLE
-        this.pgService.queryEmbeddingSimilarity('[5, 3, 6]', 2)
+        // this.pgService.insertVectors([[7, 8, 9], [10, 11, 12]])
+        // this.pgService.queryEmbeddingSimilarity('[5, 3, 6]', 1)
         
         this.mountControllers()
         logger.success('Server initialized')

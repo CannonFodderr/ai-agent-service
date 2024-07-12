@@ -1,6 +1,6 @@
 import createLogger from 'fodderlogger/dist'
 import { Client, ClientConfig } from 'pg'
-
+import { Vector3 } from '../types/vector.types'
 const logger = createLogger('postgres-service', { debug: true })
 let service: undefined | PostgresService
 
@@ -124,6 +124,28 @@ export class PostgresService {
         }
         logger.success(`Table ${tableName} created if it didn't exist`);
         return true
+    }
+    async activatePgVectorExtension () {
+        const str = 'CREATE EXTENSION vector;'
+        return await this.query(str)
+    }
+    async createOrAlterEmbeddingTable (tableName: string = 'items', vectorType: 2 | 3 = 3, existingTable: boolean = false) {
+        const command = existingTable ? 'ALTER' : 'CREATE'
+        const str = `${command} TABLE ${tableName} (id bigserial PRIMARY KEY, embedding vector(${vectorType}));`
+        return await this.query(str)
+    }
+    async insertVectors (vectors: Vector3[]) {
+        const vectorStr = vectors.map(v => `('[${v[0]},${v[1]},${v[2]}]')`)
+        const str = `INSERT INTO items (embedding) VALUES ${vectorStr}`
+        return await this.query(str)
+    }
+    async updateVector (id: number, vector: Vector3) {
+        const str = `UPDATE items SET embedding = '${vector}' WHERE id = ${id};`
+        return await this.query(str)
+    }
+    async deleteVector (id: number) {
+        const str = `DELETE FROM items WHERE id = ${id};`
+        return await this.query(str)
     }
     async queryEmbeddingSimilarity (data: string, limit: number = 1) {
         const str = `SELECT * FROM items ORDER BY embedding <-> '${data}' LIMIT ${limit};`
