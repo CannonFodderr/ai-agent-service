@@ -1,33 +1,19 @@
 import createLogger from 'fodderlogger/dist'
 import { Client, ClientConfig } from 'pg'
 
-const logger = createLogger('postgres-service')
+const logger = createLogger('postgres-service', { debug: true })
 let service: undefined | PostgresService
+
 export class PostgresService {
     private client: Client
     constructor (pgConfig: ClientConfig) {
         this.client = new Client(pgConfig)
+        this.initService()
     }
     async initService () {
         try {
-            logger.info(`Initializing PostgreSQL...`)
+            logger.debug(`Initializing PostgreSQL...`)
             this.addClientListeners()
-            const dbAvailable = await this.getOrCreateDatabase('test')
-            console.log({ dbAvailable })
-            if(!dbAvailable) {
-                logger.error(`Database not available`)
-            }
-            const schemaAvailable = await this.createSchema('test-schema')
-            console.log({ schemaAvailable })
-            if(!schemaAvailable) {
-                logger.error(`Schema not available`)
-            }
-            const tableAvailable = await this.createTableIfNotExists('test-table')
-            console.log({ tableAvailable })
-            if(!tableAvailable) {
-                logger.error(`Table not available`)
-            }
-            logger.success(`PostgreSQL initialized`)
             this.connect()
         } catch (error) {
             logger.error(`Error initializing PostgreSQL: ${error}`)
@@ -38,11 +24,12 @@ export class PostgresService {
         this.client.on("end", () => logger.warn("PostgreSQL connection ended"))
         this.client.on("notice", (msg) => logger.info(`PostgreSQL: ${msg}`))
         this.client.on("notification", (msg) => logger.info(`PostgreSQL: ${msg}`))
+        logger.success(`PostgreSQL listeners added`)
     }
     async connect () {
         try {
             await this.client.connect()
-            logger.success('Connected to PostgreSQL')
+            logger.success(`Connected to PostgreSQL, Selected db is: ${this.client.database}`)
         } catch (error) {
             logger.error(`Error connecting to PostgreSQL: ${error}`)
         }
@@ -138,9 +125,19 @@ export class PostgresService {
         logger.success(`Table ${tableName} created if it didn't exist`);
         return true
     }
+    async queryEmbeddingSimilarity (data: string, limit: number = 1) {
+        const str = `SELECT * FROM items ORDER BY embedding <-> '${data}' LIMIT ${limit};`
+        return await this.query(str)
+    }
     async query (queryString: string) {
         try {
+            logger.debug(`Querying PostgreSQL: ${queryString}`)
             const result = await this.client.query(queryString)
+            if(!result || !result.rows) {
+                logger.error(`Error querying PostgreSQL: ${result}`)
+                return null
+            }
+            logger.debug({ result: result.rows })
             return result
         } catch (error) {
             logger.error(`Error querying PostgreSQL: ${error}`)

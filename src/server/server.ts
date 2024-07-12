@@ -30,7 +30,7 @@ class server {
         this.app = express()
         this.config = config
 
-        this.mountControllers()
+        
 
         this.pgService = createPostgresService({ 
             host: this.config.POSTGRES_HOST,
@@ -38,9 +38,11 @@ class server {
             user: this.config.POSTGRES_SERVICE_USER,
             password: this.config.POSTGRES_SERVICE_PASSWORD,
             database: this.config.POSTGRES_DB_NAME,
-            keepAlive: true,
         })
-        this.pgService.initService()
+        // QUERY ALL RECORDS IN test TABLE
+        this.pgService.queryEmbeddingSimilarity('[5, 3, 6]', 2)
+        
+        this.mountControllers()
         logger.success('Server initialized')
     }
     private async mountControllers (includeControllers: ControllerName[] = []) {

@@ -1,5 +1,5 @@
 services:
-  web:
+  api:
     container_name: 'ai-service'
     build:
       context: ./
@@ -9,20 +9,21 @@ services:
       - .env
     environment:
       - OLLAMA_HOST=http://host.docker.internal
-      - POSTGRES_HOST=db_postgres
+      - POSTGRES_HOST=pgvector
     ports:
       - "9000:9000"
     depends_on:
-      db_postgres:
+      pgvector:
         condition: service_healthy
     command: ["node","./index.js"]
  
-  db_postgres:
-    container_name: 'postgres'
-    image: postgres
+  pgvector:
+    container_name: 'pgvector'
+    image: ankane/pgvector
     restart: always
     volumes:
-      - ./volumes/pgdata:/var/lib/postgresql/data:z
+      - ./pgvector/scripts:/docker-entrypoint-initdb.d
+      - db-data:/var/lib/postgresql/data:rw
     ports: ["${POSTGRES_PORT}:${POSTGRES_PORT}"]
     environment:
       PGUSER: ${POSTGRES_USER}
@@ -36,8 +37,10 @@ services:
       retries: 10
  
   adminer:
-    container_name: 'postgres-adminer'
+    container_name: 'postgres_adminer'
     image: adminer
     restart: always
     ports:
       - 8080:8080
+volumes:
+  db-data: {}
