@@ -4,6 +4,7 @@ import cors from 'cors'
 import createLlmService, { OllamaService } from '../../service/ollama-service'
 import { bufferStreamHandler, bufferStreamToString, isStream } from '../../utils/stream.utils'
 import { UserPromptData } from '../../types/prompt.types'
+import { OllamaEmbeddingRequestPayload } from '../../types/ollama.types'
 
 const logger = createLogger('llmController', { debug: true })
 
@@ -60,9 +61,7 @@ export class LlmController {
                 logger.error('Error getting LLM stream')
                 return res.sendStatus(500)
             }
-            console.log({ response })
             const { data } = response
-            console.log({ data })
             if(streaming) {
                 const done = await bufferStreamHandler(data, res)
                 if (!done) {
@@ -84,6 +83,25 @@ export class LlmController {
                 
             }
             
+        })
+    }
+    private isValidEmbeddingRequest (req: Request) {
+        if(!req || !req.body) return false
+        return true
+    }
+    createEmbeddings (router: Router, path: string) {
+        router.post(path, async (req: Request, res: Response) => {
+            if(!this.isValidEmbeddingRequest(req)) {
+                logger.error(`Bad payload for embedding request`)
+                return res.sendStatus(400)
+            }
+            const embedingPayload = req.body as OllamaEmbeddingRequestPayload
+            const created = await this.service.generateEmbeddings(embedingPayload)
+            if(!created) {
+                logger.error(`Error generating embeddings`)
+                return res.sendStatus(500)
+            }
+            return res.sendStatus(200)
         })
     }
     getRouters () {

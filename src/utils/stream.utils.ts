@@ -66,8 +66,8 @@ export async function bufferStreamToString (stream: Stream): Promise<string | nu
             resolve(answer)
         })
         stream.on("error", (err) => {
-            logger.error(`Error in stream: ${err}`)
-            reject("LLM stream error")
+            logger.error(`LLM stream error: ${err}`)
+            resolve(null)
         })
     })
 }
