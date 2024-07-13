@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "node --env-file .env ./dist/test/**/*.js",
+    "test": "node --test --env-file .env ./dist/test/**/*.js",
     "start": "node --env-file .env ./dist/index",
     "build": "tsc",
     "prestart": "tsc",

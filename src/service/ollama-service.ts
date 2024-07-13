@@ -92,8 +92,8 @@ export class OllamaService {
             logger.error(`Failed to generate embeddings: ${JSON.stringify(embdRes)}`)
             return null
         }
-        console.debug(embdRes.data.embedding)
-        console.debug(`Embed res status: ${embdRes.status}`)
+        // console.debug(embdRes.data)
+        // console.debug(`Embed res status: ${embdRes.status}`)
         return embdRes.data.embedding
     }
     async llmIntentDetection (userData: UserPromptData) {

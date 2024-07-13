@@ -3,15 +3,17 @@ import { describe, it} from 'node:test'
 import { OllamaService } from '../../service/ollama-service'
 import { UserPromptData } from '../../types/prompt.types'
 import { bufferStreamToString, isStream } from '../../utils/stream.utils'
+import { OllamaEmbeddingRequestPayload } from '../../types/ollama.types'
 
+const model = 'llama3'
+const embedModel = "nomic-embed-text"
 
 let ollamaService: OllamaService | undefined =  new OllamaService()
-let model = 'llama3:latest'
 describe(`llm service test suite`, async () => {
-    it(`Should create ollama service`, async () => {
+    it(`@health - Should create ollama service`, async () => {
         assert.notEqual(ollamaService, undefined)
     })
-    it(`Should get list of available models`, async () => {
+    it(`@health - Should get list of available models`, async () => {
         const modelsList = await ollamaService.getModelsList()
         console.log({ modelsList: modelsList.map(m => {
             return {
@@ -20,7 +22,7 @@ describe(`llm service test suite`, async () => {
         }) })
         assert.equal(modelsList.length > 0, true)
     })
-    it(`Should fail to get response - bad payload`, async () => {
+    it(`@payload - Should fail to get response - bad payload`, async () => {
         const payload: UserPromptData = {
             input: "",
             config: {
@@ -31,7 +33,7 @@ describe(`llm service test suite`, async () => {
         const res = await ollamaService.llmGenerate(payload)
         assert.equal(res, null)
     })
-    it(`Should get response from llm`, async () => {
+    it(`@health Should get response from llm`, async () => {
         const payload: UserPromptData = {
             input: "Hello from user...",
             config: {
@@ -44,11 +46,26 @@ describe(`llm service test suite`, async () => {
         assert.notEqual(data, undefined)
         assert.equal(isStream(data), true)
         const str = await bufferStreamToString(data)
-        console.log({ str })
         assert.notEqual(str, null)
         assert.equal(str && str.length > 0, true)
     })
-    it(`Should get current date with tool`, async () => {
+    it(`@health - should get response with version included`, async () => {
+        const version = 'latest'
+        const payload: UserPromptData = {
+            input: "Hello from user...",
+            config: {
+                streaming: false,
+                model: `${model}:${version}`
+            }
+        }
+        const { data } = await ollamaService.llmGenerate(payload) || {}
+        assert.notEqual(data, undefined)
+        assert.equal(isStream(data), true)
+        const str = await bufferStreamToString(data)
+        assert.notEqual(str, null)
+        assert.equal(str && str.length > 0, true)
+    })
+    it(`@tools - Should get current date with tool`, async () => {
         const payload: UserPromptData = {
             input: "What date is today ?",
             config: {
@@ -63,7 +80,7 @@ describe(`llm service test suite`, async () => {
         assert.notEqual(str, null)
         assert.equal(str && str.length > 0, true)
     })
-    it (`Should detect usage of tool 'date'`, async () => {
+    it (`@tools - Should detect usage of tool 'date'`, async () => {
         const payload: UserPromptData = {
             input: "What time is it ?",
             config: {
@@ -78,7 +95,7 @@ describe(`llm service test suite`, async () => {
         assert.equal(jsonData.tool, "time_tool")
         assert.equal(jsonData.canAnswer, true)
     })
-    it(`Should detect usage of tool 'os'`, async () => {
+    it(`@tools - Should detect usage of tool 'os'`, async () => {
         const payload: UserPromptData = {
             input: "What is my system info ?",
             config: {
@@ -93,7 +110,7 @@ describe(`llm service test suite`, async () => {
         assert.equal(jsonData.tool, "os_info")
         assert.equal(jsonData.canAnswer, true)
     })
-    it(`Should get current time in ms with tool`, async () => {
+    it(`@tools - Should get current time in ms with tool`, async () => {
         const payload: UserPromptData = {
             input: "How much time until new years eve ?",
             config: {
@@ -108,7 +125,7 @@ describe(`llm service test suite`, async () => {
         assert.notEqual(str, null)
         assert.equal(str && str.length > 0, true)
     })
-    it(`Should use the os tool to get system info`, async () => {
+    it(`@tools - Should use the os tool to get system info`, async () => {
         const payload: UserPromptData = {
             input: "What is my system info ?",
             config: {
@@ -124,7 +141,7 @@ describe(`llm service test suite`, async () => {
         assert.equal(str && str.length > 0, true)
         // assert.equal(str && str.includes("GB"), true)
     })
-    it(`Should respond according to injected message history`, async () => {
+    it(`@history - Should respond according to injected message history`, async () => {
         const payload: UserPromptData = {
             input: "What is my name?",
             config: {
@@ -147,7 +164,7 @@ describe(`llm service test suite`, async () => {
         assert.equal(str && str.length > 0, true)
         assert.equal(str && str.includes("Inigo Montoya"), true)
     })
-    it(`Should alter behaivour if system prompt is sent in the request`, async () => {
+    it(`@system - Should alter behaivour if system prompt is sent in the request`, async () => {
         const payload: UserPromptData = {
             input: "What is my name?",
             config: {
@@ -164,5 +181,15 @@ describe(`llm service test suite`, async () => {
         console.log({ str })
         assert.equal(str && str.length > 0, true)
         assert.equal(str && str.includes("OK"), true)
+    })
+    it(`@embed - Should generate new embeddings`, async () => {
+        const payload: OllamaEmbeddingRequestPayload = {
+            prompt: "What is my name?",
+            model: embedModel
+        }
+        const embeddings = await ollamaService.generateEmbeddings(payload)
+        console.log({ embeddings })
+        assert(embeddings)
+        assert(Array.isArray(embeddings) && embeddings.length > 0)
     })
 })
