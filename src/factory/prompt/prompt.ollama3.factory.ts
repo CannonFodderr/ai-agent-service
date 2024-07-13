@@ -16,7 +16,7 @@ class Ollama3PromptFactory {
         this.toolsList = toolsModule.getToolsList()
     }
     private getDefaultSystemConfig (llmFunction?: LLM_FUNCTION, context?: any): string {
-        let systemPrompt = "You are a a helpful assistant, If you don't know the answer say you don't know."
+        let systemPrompt = "You are a a helpful AI assistant, If you don't know the answer say you don't know."
         if(llmFunction === LLM_FUNCTION.INTENT_DETECTION) {
             return "Detect the topic of the user input and set how confident you are with the detection, answer ONLY with JSON object { 'intent': string, confidence: number }. if you are unable to detect set intent to none."
         } else if (llmFunction === LLM_FUNCTION.TOOLS_DETECTION) {
@@ -24,7 +24,7 @@ class Ollama3PromptFactory {
         }
         if(context) {
             const contextStr = typeof context !== "string" ? JSON.stringify(context).trim() : context
-            systemPrompt = `If needed, use this context: ${contextStr} to try and answer. ${systemPrompt}`
+            systemPrompt = `If needed, use this context: ${contextStr} to try and answer, do not include mention of the context in the answer. ${systemPrompt}`
         }
         return systemPrompt
         

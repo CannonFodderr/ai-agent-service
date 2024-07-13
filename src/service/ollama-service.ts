@@ -42,18 +42,26 @@ export class OllamaService {
         }
     }
     private selectModel (modelName: string) {
-        console.log({ modelName })
-        return modelName && this.availableModels.map(m => m.name).includes(modelName) ? modelName : this.availableModels[0].name
+        const [ name ] = modelName.split(":")
+        return name && this.availableModels.map(m => m.name).includes(name) ? name : this.availableModels[0].name
     }
     async getModelsList () {        
         try {
             const { data } = await this.ollamaCLient.get("/api/tags")
-            this.availableModels = Array.isArray(data.models) ? data.models : []
+            this.availableModels = Array.isArray(data.models) ? data.models.map((m: OllamaModel) => {
+                const [name, version] = m.name.split(":")
+                return {
+                    ...m,
+                    name: name,
+                    version: version
+                }
+            }) : []
             logger.success("Ollama models list: ")
-            logger.table(data.models.map((m: OllamaModel) => {
+            logger.table(this.availableModels.map((m: OllamaModel) => {
+
                 return {
                     name: m.name,
-                    family: m.details.family
+                    family: m.details.family,
                 }
             }))
             if(this.availableModels.length < 1) {
@@ -66,7 +74,7 @@ export class OllamaService {
         }
     }
     private triggerLLM (payload: OllamaGenerateRequestPayload) {
-        logger.debug(`Triggering LLM: ${JSON.stringify(payload)}`)
+        // logger.debug(`Triggering LLM: ${JSON.stringify(payload)}`)
         return this.ollamaCLient.post("/api/generate", payload, {
             headers: {
                 "Content-Type": "application/json"
@@ -133,6 +141,10 @@ export class OllamaService {
         return toolsLlmRes
     }
     async llmGenerate (userData: UserPromptData) {
+            if(!userData.input) {
+                logger.error(`User input is empty`)
+                return null
+            }
             try {
                 let context: undefined | ExecutorResponse
                 const res = await this.llmCheckTools(userData)
@@ -173,7 +185,6 @@ export class OllamaService {
                 }
                 const { input, system, messages, config } = userData
                 const model: string = this.selectModel(config?.model || "")
-                console.log({ model })
                 // const streaming = userData.config?.streaming === false ? false : true // default to stream
                 const prompt = this.promptFactory.generatePrompt({ 
                     input,

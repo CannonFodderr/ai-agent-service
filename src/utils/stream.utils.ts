@@ -46,13 +46,12 @@ export async function bufferStreamHandler (stream: Stream, res: Response): Promi
     })
 }
 export async function bufferStreamToString (stream: Stream): Promise<string | null> {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         let answer = ""
         stream.on('data', (buffer: Buffer) => {
             try {
-                
                 const streamEvent = JSON.parse(buffer.toString().trim())
-                const status = streamEvent.done ? 200 : 207
+                // const status = streamEvent.done ? 200 : 207
                 if(streamEvent.response) {
                     answer += streamEvent.response
                 }
@@ -63,6 +62,7 @@ export async function bufferStreamToString (stream: Stream): Promise<string | nu
         })
         stream.on("end", () => {
             logger.debug('Stream ended')
+            logger.debug({ answer })
             resolve(answer)
         })
         stream.on("error", (err) => {
