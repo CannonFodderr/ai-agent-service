@@ -20,7 +20,14 @@ class Ollama3PromptFactory {
         if(llmFunction === LLM_FUNCTION.INTENT_DETECTION) {
             return "Detect the topic of the user input and set how confident you are with the detection, answer ONLY with JSON object { 'intent': string, confidence: number }. if you are unable to detect set intent to none."
         } else if (llmFunction === LLM_FUNCTION.TOOLS_DETECTION) {
-            systemPrompt = `Answer with a VALID JSON (REMOVE LINE BREAKS) only. Check if any of these tools (${JSON.stringify(this.toolsList)}) might help. if a tool is required set its name to the JSON tool property and canAnswer should be false. if you unable to answer but if you are unable to answer set canAnswer to false and tool to empty string to none. answer ONLY with JSON object { 'canAnswer': boolean, 'tool': string }"`
+            systemPrompt = `You are provided with function signatures within <tools></tools> XML tags. You may call one or more functions to assist with the user query. Don't make assumptions about what values to plug into functions. Return a list of objects containing the function name and arguments as follows:
+
+                {"name": <function-name>,"arguments": <args-dict>}
+
+                Here are the available tools:
+                <tools>${JSON.stringify(this.toolsList)}</tools>
+                
+                answer ONLY with the list of JSON objects you populated.`
         }
         if(context) {
             const contextStr = typeof context !== "string" ? JSON.stringify(context).trim() : context
@@ -57,7 +64,6 @@ class Ollama3PromptFactory {
                 ${system}<|eot_id|>
             ${historyMessages}
             ${userInput}
-
             <|start_header_id|>assistant<|end_header_id|>
         `
     }

@@ -9,8 +9,8 @@ export class PromptFactory {
 
     generatePrompt (userConfig: UserPromptData, modelConfig: OllamaModelConfig, llmFunction?: LLM_FUNCTION): string {
         switch(modelConfig.model) {
-            case "llama3": return createOllamaPromptFactory().generatePrompt(userConfig, llmFunction)       
-            default: return ""
+            case "llama3": return createOllamaPromptFactory().generatePrompt(userConfig, llmFunction)
+            default: return createOllamaPromptFactory().generatePrompt(userConfig, llmFunction)
         }
     }
 }

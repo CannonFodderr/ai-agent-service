@@ -7,7 +7,7 @@ import { OllamaEmbeddingRequestPayload } from '../../types/ollama.types'
 
 const model = 'llama3'
 const embedModel = "nomic-embed-text"
-
+const toolModel = 'llama3-groq-tool-use'
 let ollamaService: OllamaService | undefined =  new OllamaService()
 describe(`llm service test suite`, async () => {
     it(`@health - Should create ollama service`, async () => {
@@ -70,7 +70,8 @@ describe(`llm service test suite`, async () => {
             input: "What date is today ?",
             config: {
                 streaming: false,
-                model 
+                model,
+                toolModel
             }
         }
         const { data } = await ollamaService.llmGenerate(payload) || {}
@@ -85,37 +86,40 @@ describe(`llm service test suite`, async () => {
             input: "What time is it ?",
             config: {
                 streaming: false,
-                model 
+                model,
+                toolModel
             }
         }
-        const { data } = await ollamaService.llmCheckTools(payload) || {}
-        assert.notEqual(data, undefined)
-        assert(data.response)
-        const jsonData = JSON.parse(data.response)
-        assert.equal(jsonData.tool, "time_tool")
-        assert.equal(jsonData.canAnswer, true)
+        const validTools = await ollamaService.llmCheckTools(payload)
+        console.log({ validTools })
+        assert.notEqual(validTools, undefined)
+        assert(validTools)
+        assert.equal(validTools[0].name, "time_tool")
+        assert.equal(typeof validTools[0].arguments === "object", true)
     })
     it(`@tools - Should detect usage of tool 'os'`, async () => {
         const payload: UserPromptData = {
-            input: "What is my system info ?",
+            input: "Get system info",
             config: {
                 streaming: false,
-                model 
+                model,
+                toolModel
             }
         }
-        const { data } = await ollamaService.llmCheckTools(payload) || {}
-        assert.notEqual(data, undefined)
-        assert(data.response)
-        const jsonData = JSON.parse(data.response)
-        assert.equal(jsonData.tool, "os_info")
-        assert.equal(jsonData.canAnswer, true)
+        const validTools = await ollamaService.llmCheckTools(payload)
+        console.log({ validTools })
+        assert.notEqual(validTools, undefined)
+        assert(validTools)
+        assert.equal(validTools[0].name, "os_info")
+        assert.equal(typeof validTools[0].arguments === "object", true)
     })
     it(`@tools - Should get current time in ms with tool`, async () => {
         const payload: UserPromptData = {
             input: "How much time until new years eve ?",
             config: {
                 streaming: false,
-                model 
+                model,
+                toolModel
             }
         }
         const { data } = await ollamaService.llmGenerate(payload) || {}
@@ -130,7 +134,8 @@ describe(`llm service test suite`, async () => {
             input: "What is my system info ?",
             config: {
                 streaming: false,
-                model 
+                model,
+                toolModel
             }
         }
         const { data } = await ollamaService.llmGenerate(payload) || {}

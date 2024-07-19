@@ -1,4 +1,6 @@
 type LlmRequestConfig = {
     streaming: boolean,
-    model?: string
+    model?: string,
+    toolModel?:string,
+    embedModel?: string
 }

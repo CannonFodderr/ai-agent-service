@@ -17,7 +17,7 @@ export class ToolsModule {
         this.tools = { 
             "date_tool":  { executor: getDate, description: "Returns the current date" },
             "time_tool": { executor: getTime, description: "Returns the current time" },
-            "os_info": { executor: getOsInfo, description: "Returns  operating system (OS) information" },
+            "os_info": { executor: getOsInfo, description: "Returns operating system (OS) information" },
             "tools_info": { executor: () => this.getToolsList, description: "Returns a list of tools available for the AI to answer with to use as context" }
         }
     }

@@ -5,10 +5,13 @@ import { PromptFactory } from "../factory/prompt/prompt.factory"
 import createPromptFactory from "../factory/prompt/prompt.factory"
 import { LLM_FUNCTION } from "../factory/prompt/prompt.ollama3.factory"
 import createToolsModule, { ExecutorResponse, ToolsModule } from "../modules/tools.module"
-import { isValidJSON } from "../utils/json-parser.util"
+import { parseJSON } from "../utils/json-parser.util"
 import { OllamaEmbeddingRequestPayload, OllamaGenerateRequestPayload, OllamaModel } from '../types/ollama.types'
 import createApiService, { ApiService } from "./api-service"
 import { UserPromptData } from "../types/prompt.types"
+import { ValidTool } from "../types/tools.types"
+import { removeLineBreaks, removeTags } from '../utils/string-parser.util'
+import { bufferStreamToString, isStream } from "../utils/stream.utils"
 const logger = createLogger('llm-service', { debug: true })
 const config = getConfig()
 
@@ -43,7 +46,8 @@ export class OllamaService {
     }
     private selectModel (modelName: string) {
         const [ name ] = modelName.split(":")
-        return name && this.availableModels.map(m => m.name).includes(name) ? name : this.availableModels[0].name
+        const selected = name && this.availableModels.map(m => m.name).includes(name) ? name : this.availableModels[0].name
+        return selected
     }
     async getModelsList () {        
         try {
@@ -73,15 +77,24 @@ export class OllamaService {
             return []
         }
     }
-    private triggerLLM (payload: OllamaGenerateRequestPayload) {
-        // logger.debug(`Triggering LLM: ${JSON.stringify(payload)}`)
-        return this.ollamaCLient.post("/api/generate", payload, {
+    private async triggerLLM (payload: OllamaGenerateRequestPayload) {
+        const res = await this.ollamaCLient.post("/api/generate", payload, {
             headers: {
                 "Content-Type": "application/json"
             },
             responseType:  payload.stream ? "stream" : "json"
         })
-
+        if(res.status !== 200) {
+            logger.warn(`LLM Response status: ${res.status}`)
+        }
+        const { data } = res
+        if(isStream(data) && !payload.stream) {
+            logger.debug(`LLM Response is STREAM, should be JSON... converting to string`)
+            const str = await bufferStreamToString(res.data)
+            return { data: { response: str } }
+        }
+        logger.debug(`LLM Response is JSON, returning`)
+        return res
     }
     async generateEmbeddings (payload: OllamaEmbeddingRequestPayload) {
         if(!payload.model) {
@@ -92,8 +105,6 @@ export class OllamaService {
             logger.error(`Failed to generate embeddings: ${JSON.stringify(embdRes)}`)
             return null
         }
-        // console.debug(embdRes.data)
-        // console.debug(`Embed res status: ${embdRes.status}`)
         return embdRes.data.embedding
     }
     async llmIntentDetection (userData: UserPromptData) {
@@ -117,12 +128,16 @@ export class OllamaService {
         return await this.triggerLLM(payload)
     }
     async llmCheckTools (userData: UserPromptData) {
+        if(!userData.config?.toolModel) {
+            logger.error(`Tool model is not defined`)
+            return null
+        }
         if(!this.availableModels.length) {
             logger.error("Ollama models not available")
             return null
         }
-
-        const model: string = this.selectModel(userData.config?.model || "")
+        
+        const model: string = this.selectModel(userData.config.toolModel)
         const { input, messages } = userData
         const prompt = this.promptFactory.generatePrompt({ 
             input,
@@ -137,8 +152,54 @@ export class OllamaService {
             prompt,
             stream: false
         }
-        const toolsLlmRes = await this.triggerLLM(payload)
-        return toolsLlmRes
+
+        const res = await this.triggerLLM(payload)
+        if(!res || !res.data) {
+            logger.error("Failed to get tools response")
+            return null
+        }
+        const { response } = res.data
+        if(!response || typeof response !== 'string') {
+            console.error(`Empty Response: ${response } or bad type response from LLM: ${typeof response}`)
+            return null
+        }
+        const trimmedResponse = response.trim()
+        if(!trimmedResponse) {
+            logger.error(`trimmed response is empty: ${response}`)
+            return null
+        }
+        const normalizedResponse = removeTags(removeLineBreaks(trimmedResponse))
+        const json = parseJSON(normalizedResponse)
+        if(!json) {
+            logger.error(`Failed to parse tools response: ${response}`)
+            return null
+        }
+        const normalizedToolsRes = Array.isArray(json) ? json : [json]
+        const validatedTools: ValidTool[] = []
+
+        for (const tool of normalizedToolsRes) {
+            if(!tool || !tool.name) {
+                logger.error(`Invalid tool response: ${JSON.stringify(tool)}`)
+                continue
+            }
+            validatedTools.push({
+                name: tool.name,
+                arguments: tool.arguments
+            })
+        }
+        return validatedTools
+    }
+    private async executeTool (toolName: string): Promise<null | ExecutorResponse> {
+        if(!toolName || toolName.toLowerCase() === 'none') {
+            logger.error(`Tool ${toolName} not found`)
+            return null
+        }
+        try {
+            return await this.toolsModule.executeTool(toolName)
+        } catch (error) {
+            logger.error(`Failed to execute tool ${toolName}: ${error}`)
+            return null
+        }        
     }
     async llmGenerate (userData: UserPromptData) {
             if(!userData.input) {
@@ -146,41 +207,17 @@ export class OllamaService {
                 return null
             }
             try {
-                let context: undefined | ExecutorResponse
-                const res = await this.llmCheckTools(userData)
-                if(!res || !res.data) {
-                    logger.error("Failed to get tools response")
-                    return null
-                }
-                const { response } = res.data
-                if(response && typeof response === "string") {
-                    let toParse = response
-                    const jsonValid = isValidJSON(response)
-                    if(!jsonValid) {
-                        // Retry if not valid JSON
-                        const secondaryToolsRequest = await this.llmCheckTools({ input: `This answer: ${response} is not a valid json format... refactor your answer to only return a valid JSON`})
-                        if(secondaryToolsRequest) {
-                            toParse = secondaryToolsRequest.data.respone
+                // logger.debug(`Testing LLM service`)
+                let context: null | ExecutorResponse = null
+                if(userData.config?.toolModel) {
+                    const toolsList = await this.llmCheckTools(userData) || []
+                    logger.debug(`Tools list: ${JSON.stringify(toolsList)}`)
+                    for (const tool of toolsList) {
+                        // We only need to execute one tool
+                        context = await this.executeTool(tool.name)
+                        if(context) {
+                            break
                         }
-                    }
-                    try {
-                        const jsonRes = JSON.parse(toParse.trim().replace(/\n/g,","))
-                        const { tool: toolName } = jsonRes
-                        if(toolName && toolName.toLowerCase() !== 'none') {
-                            const toolData = await this.toolsModule.executeTool(toolName)
-                            if(toolData) {
-                                context = toolData
-                            }
-                        }
-                    } catch (error) {
-                        if(error instanceof Error) {
-                            logger.warn(error.name, error.message)
-                            if (error.name === 'SyntaxError' && error.message.indexOf("not valid JSON")) {
-                                logger.error(`Error parsing LLM response: ${error.message}`)
-                            }
-                        }
-                        logger.error("Error parsing LLM response")
-                        return null
                     }
                 }
                 const { input, system, messages, config } = userData
@@ -190,7 +227,7 @@ export class OllamaService {
                     input,
                     system,
                     messages,
-                    context
+                    context: context || undefined
                 }, 
                 {
                     model 

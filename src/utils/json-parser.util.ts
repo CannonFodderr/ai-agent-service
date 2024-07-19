@@ -2,12 +2,11 @@ import createLogger from "fodderlogger/dist"
 
 const logger = createLogger('json-parser-util')
 
-export function isValidJSON (data: any) {
+export function parseJSON (data: any) {
     try {
-        JSON.parse(data)
+        return JSON.parse(data)
     } catch (error) {
-        logger.error(`Error validating JSON: ${error}`)
-        return false
+        logger.error(`parseJSON: Error parsing JSON: ${error}`)
+        return null
     }
-    return true
 }
