@@ -24,10 +24,19 @@ export class LlmController {
             credentials: true
         }))
         llmRouter.use(json())
+        const embeddingRouter = Router()
+        embeddingRouter.use(cors({
+            origin: "localhost",
+            credentials: true
+        }))
+        embeddingRouter.use(json())
 
         this.chatLlm(llmRouter, `${config.baseApi}/llm/chat`)
+        this.createEmbeddings(embeddingRouter, `${config.baseApi}/llm/embed/create` )
 
         this.routers.push(llmRouter)
+        this.routers.push(embeddingRouter)
+
         logger.info('LLM controller initialized')
         
     }
@@ -97,11 +106,12 @@ export class LlmController {
                 return res.sendStatus(400)
             }
             const embedingPayload = req.body as OllamaEmbeddingRequestPayload
-            const created = await this.service.generateEmbeddings(embedingPayload)
-            if(!created) {
+            const embeddings = await this.service.generateEmbeddings(embedingPayload)
+            if(!embeddings) {
                 logger.error(`Error generating embeddings`)
                 return res.sendStatus(500)
             }
+            logger.debug(`Embeddings generated: ${JSON.stringify(embeddings)}`)
             return res.sendStatus(200)
         })
     }

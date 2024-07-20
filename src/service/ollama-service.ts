@@ -97,9 +97,6 @@ export class OllamaService {
         return res
     }
     async generateEmbeddings (payload: OllamaEmbeddingRequestPayload) {
-        if(!payload.model) {
-            payload.model = 'nomic-embed-text:latest'
-        }
         const embdRes = await this.ollamaCLient.post("/api/embeddings", payload)
         if(!embdRes || !embdRes.data) {
             logger.error(`Failed to generate embeddings: ${JSON.stringify(embdRes)}`)

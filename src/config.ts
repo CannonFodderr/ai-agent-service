@@ -14,7 +14,9 @@ const CONFIG_KEY_TYPES: CONFIG_KEY_TYPE[] = [
     { key: 'POSTGRES_PORT', type: 'number' },
     { key: 'POSTGRES_DB_NAME', type: 'string' },
     { key: 'POSTGRES_SERVICE_USER', type: 'string' },
-    { key: 'POSTGRES_SERVICE_PASSWORD', type: 'string' }
+    { key: 'POSTGRES_SERVICE_PASSWORD', type: 'string' },
+    { key: 'DEBUG_MODE', type: 'boolean' },
+
 ]
 function getEmptyConfig (): Config {
     return {
@@ -34,6 +36,8 @@ function parseKeyValues (index: number, originalKey: string) {
     const type = CONFIG_KEY_TYPES[index].type
     if(type === "number") {
         return Number(env[originalKey])
+    } else if (type === "boolean") {
+        return env[originalKey] === 'true'
     } else {
         return env[originalKey]
     }
