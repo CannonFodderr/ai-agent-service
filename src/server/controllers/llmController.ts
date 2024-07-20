@@ -5,8 +5,9 @@ import createLlmService, { OllamaService } from '../../service/ollama-service'
 import { bufferStreamHandler, bufferStreamToString, isStream } from '../../utils/stream.utils'
 import { UserPromptData } from '../../types/prompt.types'
 import { OllamaEmbeddingRequestPayload } from '../../types/ollama.types'
+import { isDebugMode } from '../../utils/debugger.util'
 
-const logger = createLogger('llmController', { debug: true })
+const logger = createLogger('llmController', { debug: isDebugMode() })
 
 
 

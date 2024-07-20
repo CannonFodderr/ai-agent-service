@@ -1,8 +1,9 @@
 import { Response } from "express";
 import createLogger from "fodderlogger/dist";
 import { Stream } from "stream";
-const debugMode = true
-const logger = createLogger('stream.utils', { debug: debugMode })
+import { isDebugMode } from "./debugger.util";
+
+const logger = createLogger('stream.utils', { debug: isDebugMode() })
 
 
 function createValidStreamEvent(eventName: string, data: any) {
@@ -18,11 +19,10 @@ export async function bufferStreamHandler (stream: Stream, res: Response): Promi
             try {
                 
                 const streamEvent = JSON.parse(buffer.toString().trim())
-                console.log({ streamEvent })
                 const status = streamEvent.done ? 200 : 207
                 if(streamEvent.response) {
                     const event = createValidStreamEvent('llm-answer-chunk',streamEvent.response)
-                    if(debugMode) {
+                    if(isDebugMode()) {
                         debugAnswer += streamEvent.response
                     }    
                     res.status(status).write(event)
@@ -33,10 +33,11 @@ export async function bufferStreamHandler (stream: Stream, res: Response): Promi
             }
         })
         stream.on("end", () => {
-            logger.info('Stream ended')
-            if(debugMode) {
+            logger.debug('Stream ended')
+            if(isDebugMode()) {
                 logger.debug(debugAnswer)
             }
+            res.end()
             resolve(true)
         })
         stream.on("error", (err) => {

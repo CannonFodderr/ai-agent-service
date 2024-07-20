@@ -7,7 +7,8 @@ export type Config = {
     "POSTGRES_PORT": any,
     "POSTGRES_DB_NAME": any
     "POSTGRES_SERVICE_USER": any
-    "POSTGRES_SERVICE_PASSWORD": any
+    "POSTGRES_SERVICE_PASSWORD": any,
+    "DEBUG_MODE": any
 }
 
 // LIST OF ENV KEYS

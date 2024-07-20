@@ -12,8 +12,9 @@ import { UserPromptData } from "../types/prompt.types"
 import { ValidTool } from "../types/tools.types"
 import { removeLineBreaks, removeTags } from '../utils/string-parser.util'
 import { bufferStreamToString, isStream } from "../utils/stream.utils"
-const logger = createLogger('llm-service', { debug: true })
+import { isDebugMode } from "../utils/debugger.util"
 const config = getConfig()
+const logger = createLogger('llm-service', { debug: isDebugMode()  })
 
 
 let service: OllamaService | undefined
@@ -93,7 +94,6 @@ export class OllamaService {
             const str = await bufferStreamToString(res.data)
             return { data: { response: str } }
         }
-        logger.debug(`LLM Response is JSON, returning`)
         return res
     }
     async generateEmbeddings (payload: OllamaEmbeddingRequestPayload) {
@@ -207,7 +207,6 @@ export class OllamaService {
                 return null
             }
             try {
-                // logger.debug(`Testing LLM service`)
                 let context: null | ExecutorResponse = null
                 if(userData.config?.toolModel) {
                     const toolsList = await this.llmCheckTools(userData) || []

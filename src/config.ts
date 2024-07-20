@@ -26,7 +26,8 @@ function getEmptyConfig (): Config {
         POSTGRES_PORT:'',
         POSTGRES_DB_NAME: '',
         POSTGRES_SERVICE_PASSWORD: '',
-        POSTGRES_SERVICE_USER: ''
+        POSTGRES_SERVICE_USER: '',
+        DEBUG_MODE: ''
     }
 }
 function parseKeyValues (index: number, originalKey: string) {

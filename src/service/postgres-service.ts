@@ -1,7 +1,8 @@
 import createLogger from 'fodderlogger/dist'
 import { Client, ClientConfig } from 'pg'
 import { Vector3 } from '../types/vector.types'
-const logger = createLogger('postgres-service', { debug: true })
+import { isDebugMode } from '../utils/debugger.util'
+const logger = createLogger('postgres-service', { debug: isDebugMode() })
 let service: undefined | PostgresService
 
 export class PostgresService {
