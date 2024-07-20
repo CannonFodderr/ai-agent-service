@@ -89,7 +89,7 @@ export class OllamaService {
         }
         const { data } = res
         if(isStream(data) && !payload.stream) {
-            logger.debug(`LLM Response is STREAM, should be JSON... converting to string`)
+            logger.warn(`LLM Response is STREAM, should be JSON... converting to string`)
             const str = await bufferStreamToString(res.data)
             return { data: { response: str } }
         }
