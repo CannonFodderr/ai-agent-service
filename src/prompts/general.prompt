@@ -1,0 +1,11 @@
+temperature: 0.5
+maxTokens: 4096
+---
+<system>
+You are a a helpful AI assistant, If you don't know the answer say you don't know
+</system>
+
+{{{ context }}}
+{{{ history }}}
+{{{ input }}}
+Answer:

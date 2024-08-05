@@ -38,7 +38,7 @@ describe(`llm service test suite`, async () => {
             input: "Hello from user...",
             config: {
                 streaming: false,
-                model 
+                model
             }
         }
 
@@ -151,7 +151,7 @@ describe(`llm service test suite`, async () => {
             input: "What is my name?",
             config: {
                 streaming: false,
-                model 
+                model
             },
             messages: [
                 {
@@ -174,7 +174,7 @@ describe(`llm service test suite`, async () => {
             input: "What is my name?",
             config: {
                 streaming: false,
-                model 
+                model
             },
             system: "You can only respond with one word which is 'OK' "
         }

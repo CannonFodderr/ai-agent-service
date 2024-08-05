@@ -13,13 +13,13 @@ import { ValidTool } from "../types/tools.types"
 import { removeLineBreaks, removeTags } from '../utils/string-parser.util'
 import { bufferStreamToString, isStream } from "../utils/stream.utils"
 import { isDebugMode } from "../utils/debugger.util"
+
 const config = getConfig()
 const logger = createLogger('llm-service', { debug: isDebugMode()  })
-
-
 let service: OllamaService | undefined
 
-export class OllamaService { 
+
+export class OllamaService {
     private promptFactory: PromptFactory
     private toolsModule: ToolsModule
     private availableModels: OllamaModel[]
@@ -50,7 +50,7 @@ export class OllamaService {
         const selected = name && this.availableModels.map(m => m.name).includes(name) ? name : this.availableModels[0].name
         return selected
     }
-    async getModelsList () {        
+    async getModelsList () {
         try {
             const { data } = await this.ollamaCLient.get("/api/tags")
             this.availableModels = Array.isArray(data.models) ? data.models.map((m: OllamaModel) => {
@@ -59,6 +59,7 @@ export class OllamaService {
                     ...m,
                     name: name,
                     version: version
+
                 }
             }) : []
             logger.success("Ollama models list: ")
@@ -106,22 +107,23 @@ export class OllamaService {
     }
     async llmIntentDetection (userData: UserPromptData) {
         if(!this.availableModels.length) return logger.error("Ollama models not available")
-        
+
         const model: string = this.selectModel(userData.config?.model || "")
         const { input, system, messages } = userData
-        const prompt = this.promptFactory.generatePrompt({ 
+        const prompt = this.promptFactory.generatePrompt({
             input,
             system,
             messages,
-        }, 
+        },
         {
-            model 
+            model
         }, LLM_FUNCTION.INTENT_DETECTION)
         const payload: OllamaGenerateRequestPayload = {
             model,
             prompt,
             stream: false
         }
+        logger.info(`Triggering LLM for intent detection`)
         return await this.triggerLLM(payload)
     }
     async llmCheckTools (userData: UserPromptData) {
@@ -133,15 +135,15 @@ export class OllamaService {
             logger.error("Ollama models not available")
             return null
         }
-        
+
         const model: string = this.selectModel(userData.config.toolModel)
         const { input, messages } = userData
-        const prompt = this.promptFactory.generatePrompt({ 
+        const prompt = this.promptFactory.generatePrompt({
             input,
             messages
-        }, 
+        },
         {
-            model 
+            model
         }, LLM_FUNCTION.TOOLS_DETECTION)
 
         const payload: OllamaGenerateRequestPayload = {
@@ -196,7 +198,7 @@ export class OllamaService {
         } catch (error) {
             logger.error(`Failed to execute tool ${toolName}: ${error}`)
             return null
-        }        
+        }
     }
     async llmGenerate (userData: UserPromptData) {
             if(!userData.input) {
@@ -219,14 +221,14 @@ export class OllamaService {
                 const { input, system, messages, config } = userData
                 const model: string = this.selectModel(config?.model || "")
                 // const streaming = userData.config?.streaming === false ? false : true // default to stream
-                const prompt = this.promptFactory.generatePrompt({ 
+                const prompt = this.promptFactory.generatePrompt({
                     input,
                     system,
                     messages,
                     context: context || undefined
-                }, 
+                },
                 {
-                    model 
+                    model
                 })
                 const payload: OllamaGenerateRequestPayload = {
                     model,

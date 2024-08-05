@@ -26,7 +26,7 @@ class Ollama3PromptFactory {
 
                 Here are the available tools:
                 <tools>${JSON.stringify(this.toolsList)}</tools>
-                
+
                 answer ONLY with the list of JSON objects you populated.`
         }
         if(context) {
@@ -34,7 +34,7 @@ class Ollama3PromptFactory {
             systemPrompt = `If needed, use this context: ${contextStr} to try and answer, do not include mention of the context in the answer. ${systemPrompt}`
         }
         return systemPrompt
-        
+
     }
     private generateMessageHistoryFromUserData (messages: PromptMessage[]): string {
         let historyString = ""
@@ -51,7 +51,7 @@ class Ollama3PromptFactory {
     private generateUserInputMessage (userInput: string) {
         return `<|start_header_id|>user<|end_header_id|>${userInput}<|eot_id|>`
     }
-    
+
     generatePrompt (promptConfig: UserPromptData, llmFunction?: LLM_FUNCTION) {
         const context = promptConfig.context || ""
         const system = llmFunction || !promptConfig.system ? this.getDefaultSystemConfig(llmFunction, context) : promptConfig.system
